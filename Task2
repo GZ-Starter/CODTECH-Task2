@@ -1,0 +1,331 @@
+#include <iostream>
+#include <vector>
+#include <string>
+#include <fstream>
+#include <sstream>
+#include <algorithm>
+#include <iomanip>
+using namespace std;
+
+class Student {
+public:
+    int id;
+    string name;
+    int age;
+    string address;
+    vector<int> marks;
+    string grade;
+
+    Student(int id, const string& name, int age, const string& address) 
+        : id(id), name(name), age(age), address(address) {}
+
+    void calculateGrade() {
+        if (marks.size() != 6) {
+            grade = "NA";  // Not graded
+            return;
+        }
+        int sum = 0;
+        for (int mark : marks) {
+            sum += mark;
+            if(mark<35){
+                grade="F";
+                return;
+            }
+        }
+        double average = static_cast<double>(sum) / marks.size();
+
+        if (average >= 90) {
+            grade = "A+";
+        } else if (average >= 80) {
+            grade = "A";
+        } else if (average >= 65) {
+            grade = "B";
+        } else if (average >= 50) {
+            grade = "C";
+        } else if (average >= 35) {
+            grade = "D";
+        } else {
+            grade = "F";
+        }
+    }
+
+    void displayStudentInfo() const {
+        cout << left << setw(4) << id << " | " 
+                  << left << setw(20) << name << " | " 
+                  << left << setw(3) << age << " | " 
+                  << left << setw(30) << address << " | " 
+                  << left << setw(1) << grade << endl;
+    }
+
+    string serialize() const {
+        ostringstream oss;
+        oss << id << "," << name << "," << age << "," << address;
+        for (int mark : marks) {
+            oss << "," << mark;
+        }
+        oss << "," << grade;
+        return oss.str();
+    }
+
+    static Student deserialize(const string& data) {
+        istringstream iss(data);
+        string token;
+        
+        getline(iss, token, ',');
+        int id = stoi(token);
+        
+        getline(iss, token, ',');
+        string name = token;
+        
+        getline(iss, token, ',');
+        int age = stoi(token);
+        
+        getline(iss, token, ',');
+        string address = token;
+
+        Student student(id, name, age, address);
+        
+        for (int i = 0; i < 6; ++i) {
+            getline(iss, token, ',');
+            student.marks.push_back(stoi(token));
+        }
+
+        getline(iss, token, ',');
+        student.grade = token;
+
+        return student;
+    }
+};
+
+class StudentManagementSystem {
+private:
+    vector<Student> students;
+    const string filename = "students.txt";
+
+    void saveToFile() const {
+        ofstream ofs(filename);
+        if (!ofs) {
+            cerr << "Error: Could not open file for writing." << endl;
+            return;
+        }
+        for (const Student& student : students) {
+            ofs << student.serialize() << endl;
+        }
+        ofs.close();
+    }
+
+    void loadFromFile() {
+        ifstream ifs(filename);
+        if (!ifs) {
+            cerr << "Error: Could not open file for reading." << endl;
+            return;
+        }
+        string line;
+        while (getline(ifs, line)) {
+            if (!line.empty()) {
+                students.push_back(Student::deserialize(line));
+            }
+        }
+        ifs.close();
+    }
+
+public:
+    StudentManagementSystem() {
+        loadFromFile();
+    }
+
+    ~StudentManagementSystem() {
+        saveToFile();
+    }
+
+    Student* findStudentById(int id) {
+        for (Student& student : students) {
+            if (student.id == id) {
+                return &student;
+            }
+        }
+        return nullptr;
+    }
+
+    void addStudent(int id, const string& name, int age, const string& address, const vector<int>& marks) {
+        if (findStudentById(id)) {
+            cout << "Student with ID " << id << " already exists." << endl;
+            return;
+        }
+        Student newStudent(id, name, age, address);
+        newStudent.marks = marks;
+        newStudent.calculateGrade();
+        students.push_back(newStudent);
+        cout << "Student added successfully." << endl;
+    }
+
+    void editStudent(int id, const string& newName, int newAge, const string& newAddress) {
+        Student* student = findStudentById(id);
+        if (student) {
+            student->name = newName;
+            student->age = newAge;
+            student->address = newAddress;
+            cout << "Student details updated successfully." << endl;
+        } else {
+            cout << "Student with ID " << id << " not found." << endl;
+        }
+    }
+
+    void editMarks(int id, const vector<int>& newMarks) {
+        Student* student = findStudentById(id);
+        if (student) {
+            student->marks = newMarks;
+            student->calculateGrade();
+            cout << "Student marks updated successfully." << endl;
+        } else {
+            cout << "Student with ID " << id << " not found." << endl;
+        }
+    }
+
+    void deleteStudent(int id) {
+        auto it = remove_if(students.begin(), students.end(), [id](const Student& student) {
+            return student.id == id;
+        });
+        if (it != students.end()) {
+            students.erase(it, students.end());
+            cout << "Student deleted successfully." << endl;
+        } else {
+            cout << "Student with ID " << id << " not found." << endl;
+        }
+    }
+
+    void displayAllStudents() const {
+        if (students.empty()) {
+            cout << "No students registered." << endl;
+            return;
+        }
+        cout << left << setw(4) << "ID" << " | " 
+                  << left << setw(20) << "Name" << " | " 
+                  << left << setw(3) << "Age" << " | " 
+                  << left << setw(30) << "Address" << " | " 
+                  << left << setw(1) << "Grade" << endl;
+        cout << string(75, '-') << endl;
+        for (const Student& student : students) {
+            student.displayStudentInfo();
+        }
+    }
+
+    void displayStudent(int id) {
+        const Student* student = findStudentById(id);
+        if (student) {
+            cout << left << setw(4) << "ID" << " | " 
+                      << left << setw(20) << "Name" << " | " 
+                      << left << setw(3) << "Age" << " | " 
+                      << left << setw(30) << "Address" << " | " 
+                      << left << setw(1) << "Grade" << endl;
+            cout << string(75, '-') << endl;
+            student->displayStudentInfo();
+        } else {
+            cout << "Student with ID " << id << " not found." << endl;
+        }
+    }
+};
+
+int main() {
+    StudentManagementSystem sms;
+
+    while (true) {
+        cout << "Student Management System" << endl;
+        cout << "1. Add Student" << endl;
+        cout << "2. Edit Student Details" << endl;
+        cout << "3. Edit Student Marks" << endl;
+        cout << "4. Delete Student" << endl;
+        cout << "5. Display All Students" << endl;
+        cout << "6. Display Single Student" << endl;
+        cout << "7. Exit" << endl;
+        cout << "Enter your choice: ";
+        int choice;
+        cin >> choice;
+        cout<<endl;
+        if (choice == 7) {
+            break;
+        }
+
+        int id;
+        string name;
+        int age;
+        string address;
+        int mark;
+        vector<int> marks;
+
+        switch (choice) {
+            case 1:
+                cout << "Enter student ID: ";
+                cin >> id;
+                if (sms.findStudentById(id)) {
+                    cout << "Student with ID " << id << " already exists." << endl;
+                    break;
+                }
+                cout << "Enter student name: ";
+                cin.ignore();
+                getline(cin, name);
+                cout << "Enter student age: ";
+                cin >> age;
+                cout << "Enter student address: ";
+                cin.ignore();
+                getline(cin, address);
+                cout << "Enter marks for 6 subjects (separated by spaces): ";
+                for (int i = 0; i < 6; ++i) {
+                    cin >> mark;
+                    marks.push_back(mark);
+                }
+                sms.addStudent(id, name, age, address, marks);
+                break;
+            case 2:
+                cout << "Enter student ID: ";
+                cin >> id;
+                if (sms.findStudentById(id)) {
+                    cout << "Enter new student name: ";
+                    cin.ignore();
+                    getline(cin, name);
+                    cout << "Enter new student age: ";
+                    cin >> age;
+                    cout << "Enter new student address: ";
+                    cin.ignore();
+                    getline(cin, address);
+                    sms.editStudent(id, name, age, address);
+                } else {
+                    cout << "Student with ID " << id << " not found." << endl;
+                }
+                break;
+            case 3:
+                cout << "Enter student ID: ";
+                cin >> id;
+                if (sms.findStudentById(id)) {
+                    cout << "Enter new marks for 6 subjects (separated by spaces): ";
+                    marks.clear();
+                    for (int i = 0; i < 6; ++i) {
+                        cin >> mark;
+                        marks.push_back(mark);
+                    }
+                    sms.editMarks(id, marks);
+                } else {
+                    cout << "Student with ID " << id << " not found." << endl;
+                }
+                break;
+            case 4:
+                cout << "Enter student ID to delete: ";
+                cin >> id;
+                sms.deleteStudent(id);
+                break;
+            case 5:
+                sms.displayAllStudents();
+                break;
+            case 6:
+                cout << "Enter student ID to display: ";
+                cin >> id;
+                sms.displayStudent(id);
+                break;
+            default:
+                cout << "Invalid choice. Please enter a valid option." << endl;
+                break;
+        }
+        cout<<endl;
+    }
+    return 0;
+}
