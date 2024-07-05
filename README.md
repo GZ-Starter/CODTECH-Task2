@@ -6,7 +6,12 @@ Duration: June 25th to July 25th, 2024
 Mentor: Neelam Harish  
 
 # CODTECH-Task2
-###Student Management System
+### Task: STUDENT MANAGEMENT SYSTEM
+![image](https://github.com/GZ-Starter/CODTECH-Task2/assets/126936908/80e46a5b-b643-46d8-936a-bc03edb2f0c4)  
+![image](https://github.com/GZ-Starter/CODTECH-Task2/assets/126936908/a93d3859-844d-4fc1-b4ce-ae6a3f139517)  
+![image](https://github.com/GZ-Starter/CODTECH-Task2/assets/126936908/0abbc41e-7053-4ac0-ad8a-dce4468aa485)
+
+
 
 ---
 
